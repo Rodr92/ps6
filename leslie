@@ -1,0 +1,121 @@
+#Problem set 6
+
+
+#set working directory
+setwd("C:/Users/rodgo/Desktop/PhD/Ramos/SOC 756/ps6")
+
+# install packages and load libraries
+install.packages("tidyverse")
+install.packages("readxl")
+library(tidyverse)
+library(readxl)
+
+nLx_values <- read.csv("nLx_values.csv", header = TRUE)
+
+#Survival rates
+
+nLx_values$S <- numeric(length(nLx_values$nLx))
+for (i in 1:length(nLx_values$nLx)) {
+  nLx_values$S[i] <- nLx_values$nLx[i + 1] / nLx_values$nLx[i]
+}
+
+
+# submatrices S for Blacks 0-5, 5-10, 10-15, etc, but no 45. Colmuns are education 
+# groups, rows are education groups. These matrices are the same than slide 25
+# I am assuming here that there is no intragenerational mobility: values only in the diagonal
+
+b0 <- matrix(0, nrow = 5, ncol = 5)
+diagonal <- nLx_values$S[c(1, 11, 21, 31, 41)]
+b0[1:5, 1:5] <- diag(diagonal)
+
+b5 <- matrix(0, nrow = 5, ncol = 5)
+diagonal <- nLx_values$S[c(2, 12, 22, 32, 42)]
+b5[1:5, 1:5] <- diag(diagonal)
+
+b10 <- matrix(0, nrow = 5, ncol = 5)
+diagonal <- nLx_values$S[c(3, 13, 23, 33, 43)]
+b10[1:5, 1:5] <- diag(diagonal)
+
+b15 <- matrix(0, nrow = 5, ncol = 5)
+diagonal <- nLx_values$S[c(4, 14, 24, 34, 44)]
+b15[1:5, 1:5] <- diag(diagonal)
+
+b20 <- matrix(0, nrow = 5, ncol = 5)
+diagonal <- nLx_values$S[c(5, 15, 25, 35, 45)]
+b20[1:5, 1:5] <- diag(diagonal)
+
+b25 <- matrix(0, nrow = 5, ncol = 5)
+diagonal <- nLx_values$S[c(6, 16, 26, 36, 46)]
+b25[1:5, 1:5] <- diag(diagonal)
+
+b30 <- matrix(0, nrow = 5, ncol = 5)
+diagonal <- nLx_values$S[c(7, 17, 27, 37, 47)]
+b30[1:5, 1:5] <- diag(diagonal)
+
+b35 <- matrix(0, nrow = 5, ncol = 5)
+diagonal <- nLx_values$S[c(8, 18, 28, 38, 48)]
+b35[1:5, 1:5] <- diag(diagonal)
+
+b40 <- matrix(0, nrow = 5, ncol = 5)
+diagonal <- nLx_values$S[c(9, 19, 29, 39, 49)]
+b40[1:5, 1:5] <- diag(diagonal)
+
+#Submatrices S for Whites
+
+
+w0 <- matrix(0, nrow = 5, ncol = 5)
+diagonal <- nLx_values$S[c(51, 61, 71, 81, 91)]
+w0[1:5, 1:5] <- diag(diagonal)
+
+w5 <- matrix(0, nrow = 5, ncol = 5)
+diagonal <- nLx_values$S[c(52, 62, 72, 82, 92)]
+w5[1:5, 1:5] <- diag(diagonal)
+
+w10 <- matrix(0, nrow = 5, ncol = 5)
+diagonal <- nLx_values$S[c(53, 63, 73, 83, 93)]
+w10[1:5, 1:5] <- diag(diagonal)
+
+w15 <- matrix(0, nrow = 5, ncol = 5)
+diagonal <- nLx_values$S[c(54, 64, 74, 84, 94)]
+w15[1:5, 1:5] <- diag(diagonal)
+
+w20 <- matrix(0, nrow = 5, ncol = 5)
+diagonal <- nLx_values$S[c(55, 65, 75, 85, 95)]
+w20[1:5, 1:5] <- diag(diagonal)
+
+w25 <- matrix(0, nrow = 5, ncol = 5)
+diagonal <- nLx_values$S[c(56, 66, 76, 86, 96)]
+w25[1:5, 1:5] <- diag(diagonal)
+
+w30 <- matrix(0, nrow = 5, ncol = 5)
+diagonal <- nLx_values$S[c(57, 67, 77, 87, 97)]
+w30[1:5, 1:5] <- diag(diagonal)
+
+w35 <- matrix(0, nrow = 5, ncol = 5)
+diagonal <- nLx_values$S[c(58, 68, 78, 88, 98)]
+w35[1:5, 1:5] <- diag(diagonal)
+
+w40 <- matrix(0, nrow = 5, ncol = 5)
+diagonal <- nLx_values$S[c(59, 69, 79, 89, 99)]
+w40[1:5, 1:5] <- diag(diagonal)
+
+#Birth matrices
+# Assumption: I'm using fertility rates in Mare for year 1960. See table 2 and 3
+
+# import fertility rates
+fer <- read_excel("C:/Users/rodgo/Desktop/PhD/Ramos/SOC 756/ps6/asfr.xlsx")
+
+#create matrices for mobility using Table 3 provided by Jenna
+mobW <- matrix(c(0.132, 0.034, 0.014, 0.01, 0.001, 
+                   0.179, 0.15, 0.061, 0.027, 0.033,
+                   0.485, 0.427, 0.457, 0.243, 0.143, 
+                   0.13, 0.208, 0.25, 0.338, 0.259, 
+                   0.075, 0.18, 0.217, 0.381, 0.564), nrow = 5, ncol = 5)
+
+mobB <- matrix(c(0.289, 0.079, 0.025, 0.033, 0, 
+                   0.268, 0.35, 0.19, 0.038, 0.032, 
+                   0.243, 0.278, 0.386, 0.243, 0.163, 
+                   0.126, 0.164, 0.212, 0.496, 0.371, 
+                   0.073, 0.129, 0.188, 0.189, 0.434), nrow = 5, ncol = 5) 
+
+#Calculate B
