@@ -1,5 +1,7 @@
 #Problem set 6
-
+#Nota: los survival rates de 45 estan mal, revisar formula y ver que hice.
+#Nota: al parecer no es que esten mal, es que según Jenna ese grupo no se proyecta, por ande asumo
+#que tienen S = 0.
 
 #set working directory
 setwd("C:/Users/rodgo/Desktop/PhD/Ramos/SOC 756/ps6")
@@ -7,8 +9,11 @@ setwd("C:/Users/rodgo/Desktop/PhD/Ramos/SOC 756/ps6")
 # install packages and load libraries
 install.packages("tidyverse")
 install.packages("readxl")
+install.packages("openxlsx")
+
 library(tidyverse)
 library(readxl)
+library(openxlsx)
 
 nLx_values <- read.csv("nLx_values.csv", header = TRUE)
 
@@ -117,4 +122,165 @@ mobB <- matrix(c(0.289, 0.079, 0.025, 0.033, 0,
                    0.243, 0.278, 0.386, 0.243, 0.163, 
                    0.126, 0.164, 0.212, 0.496, 0.371, 
                    0.073, 0.129, 0.188, 0.189, 0.434), nrow = 5, ncol = 5) 
+
+
+
+# I will decompose the formula for the birth matrix in a few submatrices
+#The formula is this: Bijat = 5Li0t (Fiat + Siat * Fia+5t) Mijt, I will try to put 
+#each element of this formula on a matrix, because I need to see them to understand what I'm doing
+#I will solve for the first 4 elements of the formula and get a 5x1 matrix
+# Then, I will multiply the elements of the 5x1 matrix by the mobility matrix to get each 5x5 birth matrix
+#(note that the last steo is a simple multiplication of elements, it is not a matrix multiplication)
+
+
+#The next two matrices can be used for all age groups
+#The long way is this way:
+#Create a matrix with 5L0it values
+
+#This is the long/unefficient way of creating these matrices: 
+#L0b <- matrix(nrow = 5, ncol = 1)
+#L0b[1, 1] <- nLx_values$nLx[nLx_values$cat_race_ed_age == "Lb1_0"]
+#L0b[2, 1] <- nLx_values$nLx[nLx_values$cat_race_ed_age == "Lb2_0"]
+#L0b[3, 1] <- nLx_values$nLx[nLx_values$cat_race_ed_age == "Lb3_0"]
+#L0b[4, 1] <- nLx_values$nLx[nLx_values$cat_race_ed_age == "Lb4_0"]
+#L0b[5, 1] <- nLx_values$nLx[nLx_values$cat_race_ed_age == "Lb5_0"]
+
+#Create a 5x1 matrix with 5L0 values for each education group for blacks (short way using loops)
+
+L0b <- matrix(nrow = 5, ncol = 1)
+categories <- c("Lb1_0", "Lb2_0", "Lb3_0", "Lb4_0", "Lb5_0")
+for (i in 1:5) {
+  L0b[i, 1] <- nLx_values$nLx[nLx_values$cat_race_ed_age == categories[i]]
+}
+
+#Create a 5x1 matrix with 5L0 values for each education group for whites
+
+L0w <- matrix(nrow = 5, ncol = 1)
+categories <- c("Lw1_0", "Lw2_0", "Lw3_0", "Lw4_0", "Lw5_0")
+for (i in 1:5) {
+  L0w[i, 1] <- nLx_values$nLx[nLx_values$cat_race_ed_age == categories[i]]
+}
+
+#Importing ASFR by race and education: this is the component Fiat of the formula
+asfr <- read.xlsx ("ASFR_byRace_byEdu.xlsx")
+
+#Adding the correct survival rates to the asfr dataframe
+
+#for age 15 blacks
+asfr$Sb <- 0
+
+indices <- seq(4, 44, 10)
+asfr$Sb[1:5] <- nLx_values$S[indices]
+
+#for age 20 b
+indices <- seq(5, 45, 10)
+asfr$Sb[6:10] <- nLx_values$S[indices]
+
+#for age 25 b
+indices <- seq(6, 46, 10)
+asfr$Sb[11:15] <- nLx_values$S[indices]
+
+#for age 30 b
+indices <- seq(7, 47, 10)
+asfr$Sb[16:20] <- nLx_values$S[indices]
+
+#for age 35 b
+indices <- seq(8, 48, 10)
+asfr$Sb[21:25] <- nLx_values$S[indices]
+
+#for age 40 b
+indices <- seq(9, 49, 10)
+asfr$Sb[26:30] <- nLx_values$S[indices]
+
+
+#Now lets do the same but for whites
+
+#for age 15 whites
+asfr$Sw <- 0
+
+indices <- seq(54, 94, 10)
+asfr$Sw[1:5] <- nLx_values$S[indices]
+
+#for age 20 whites
+indices <- seq(55, 95, 10)
+asfr$Sw[6:10] <- nLx_values$S[indices]
+
+#for age 25 whites
+indices <- seq(56, 96, 10)
+asfr$Sw[11:15] <- nLx_values$S[indices]
+
+#for age 30 whites
+indices <- seq(57, 97, 10)
+asfr$Sw[16:20] <- nLx_values$S[indices]
+
+#for age 35 whites
+indices <- seq(58, 98, 10)
+asfr$Sw[21:25] <- nLx_values$S[indices]
+
+#for age 40 W
+indices <- seq(59, 99, 10)
+asfr$Sw[26:30] <- nLx_values$S[indices]
+
+#for age 40 W
+indices <- seq(59, 99, 10)
+asfr$Sw[26:30] <- nLx_values$S[indices]
+
+#I will add the L0 values to asfr, L0b = blacks and L0w = whites. These values are indexed by education
+asfr$L0b <- L0b[, 1]
+asfr$L0w <- L0w[, 1]
+
+### ver donde poner esto, pero estoy agregando filas para que fertility a los 45 sea 0
+#To add age 45, I need to add lines to asfr, I need need this to calculate births, even when S=0.
+new_rows <- data.frame(
+  Age = rep("45-49", 5),
+  Schooling = rep(0, times = 5),
+  fertilityRate_1960_white = rep(0, times = 5),
+  fertilityRate_1960_black = rep(0, times = 5),
+  Sb = rep(0, times = 5),
+  Sw = rep(0, times = 5),
+  L0b = rep(0, times = 5),
+  L0w = rep(0, times = 5)
+ )
+
+asfr <- rbind(asfr, new_rows)
+#######################################################
+
+
+
+#Now I can start multypliying elements (I'm not yet apportioning by mobility)
+#Total births for blacks
+#I'm assuming the survival rates for people aged 45 and more is 0.
+asfr$birthsb <- numeric(length(asfr$Age))
+for (i in 1:length(asfr$Age)) {
+  asfr$birthsb[i] <- (asfr$L0b [i]/200000) * ((asfr$fertilityRate_1960_black[i] + asfr$Sb[i]*asfr$fertilityRate_1960_black[i + 5]))
+}
+
+# Total births for whites
+asfr$birthsw <- numeric(length(asfr$Age))
+for (i in 1:length(asfr$Age)) {
+  asfr$birthsw[i] <- (asfr$L0w [i]/200000) * ((asfr$fertilityRate_1960_white[i] + asfr$Sw[i]*asfr$fertilityRate_1960_white[i + 5]))
+}
+
+
+
+#Now I multipli births by the mobility matrix. I should get 6 matrices for each race: IT WORKS!
+#First for blacks
+BB15 <- asfr$birthsb[1:5] * mobB
+BB20 <- asfr$birthsb[6:10]* mobB
+BB25 <- asfr$birthsb[11:15]* mobB
+BB30 <- asfr$birthsb[16:20]* mobB
+BB35 <- asfr$birthsb[21:25]* mobB
+BB40 <- asfr$birthsb[26:30]* mobB
+
+#Now for whites
+BW15 <- asfr$birthsw[1:5] * mobw
+BW20 <- asfr$birthsw[6:10]* mobw
+BW25 <- asfr$birthsw[11:15]* mobw
+BW30 <- asfr$birthsw[16:20]* mobw
+BW35 <- asfr$birthsw[21:25]* mobw
+BW40 <- asfr$birthsw[26:30]* mobw
+
+
+
+
 
