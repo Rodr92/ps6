@@ -1,7 +1,5 @@
 #Problem set 6
-#Nota: los survival rates de 45 estan mal, revisar formula y ver que hice.
-#Nota: al parecer no es que esten mal, es que según Jenna ese grupo no se proyecta, por ande asumo
-#que tienen S = 0.
+#Nota: I assume S 45 or more = 0.
 
 #set working directory
 setwd("C:/Users/rodgo/Desktop/PhD/Ramos/SOC 756/ps6")
@@ -10,14 +8,21 @@ setwd("C:/Users/rodgo/Desktop/PhD/Ramos/SOC 756/ps6")
 install.packages("tidyverse")
 install.packages("readxl")
 install.packages("openxlsx")
+install.packages("Matrix")
+install.packages("expm")
 
+
+library(Matrix)
 library(tidyverse)
 library(readxl)
 library(openxlsx)
+library(expm)
+
 
 nLx_values <- read.csv("nLx_values.csv", header = TRUE)
 
 #Survival rates
+#I get weird values for age 45, however I'll assume their survival is 0.
 
 nLx_values$S <- numeric(length(nLx_values$nLx))
 for (i in 1:length(nLx_values$nLx)) {
@@ -26,7 +31,7 @@ for (i in 1:length(nLx_values$nLx)) {
 
 
 # submatrices S for Blacks 0-5, 5-10, 10-15, etc, but no 45. Colmuns are education 
-# groups, rows are education groups. These matrices are the same than slide 25
+# groups, rows are education groups. These matrices are the same than slide 25 (lecture)
 # I am assuming here that there is no intragenerational mobility: values only in the diagonal
 
 b0 <- matrix(0, nrow = 5, ncol = 5)
@@ -64,6 +69,7 @@ b35[1:5, 1:5] <- diag(diagonal)
 b40 <- matrix(0, nrow = 5, ncol = 5)
 diagonal <- nLx_values$S[c(9, 19, 29, 39, 49)]
 b40[1:5, 1:5] <- diag(diagonal)
+
 
 #Submatrices S for Whites
 
@@ -110,19 +116,22 @@ w40[1:5, 1:5] <- diag(diagonal)
 # import fertility rates
 fer <- read_excel("C:/Users/rodgo/Desktop/PhD/Ramos/SOC 756/ps6/asfr.xlsx")
 
-#create matrices for mobility using Table 3 provided by Jenna
+#create matrices for mobility using Table 3 provided by Jenna. I transpose them to ensure 
+# the first row caputres all intergenerational mobility to lowest education
 mobW <- matrix(c(0.132, 0.034, 0.014, 0.01, 0.001, 
                    0.179, 0.15, 0.061, 0.027, 0.033,
                    0.485, 0.427, 0.457, 0.243, 0.143, 
                    0.13, 0.208, 0.25, 0.338, 0.259, 
                    0.075, 0.18, 0.217, 0.381, 0.564), nrow = 5, ncol = 5)
 
+mobW <- t(mobW)
+
 mobB <- matrix(c(0.289, 0.079, 0.025, 0.033, 0, 
                    0.268, 0.35, 0.19, 0.038, 0.032, 
                    0.243, 0.278, 0.386, 0.243, 0.163, 
                    0.126, 0.164, 0.212, 0.496, 0.371, 
                    0.073, 0.129, 0.188, 0.189, 0.434), nrow = 5, ncol = 5) 
-
+mobB <- t(mobB)
 
 
 # I will decompose the formula for the birth matrix in a few submatrices
@@ -130,22 +139,11 @@ mobB <- matrix(c(0.289, 0.079, 0.025, 0.033, 0,
 #each element of this formula on a matrix, because I need to see them to understand what I'm doing
 #I will solve for the first 4 elements of the formula and get a 5x1 matrix
 # Then, I will multiply the elements of the 5x1 matrix by the mobility matrix to get each 5x5 birth matrix
-#(note that the last steo is a simple multiplication of elements, it is not a matrix multiplication)
+#(note that the last step is a simple multiplication of elements, it is not a matrix multiplication)
 
 
-#The next two matrices can be used for all age groups
-#The long way is this way:
-#Create a matrix with 5L0it values
-
-#This is the long/unefficient way of creating these matrices: 
-#L0b <- matrix(nrow = 5, ncol = 1)
-#L0b[1, 1] <- nLx_values$nLx[nLx_values$cat_race_ed_age == "Lb1_0"]
-#L0b[2, 1] <- nLx_values$nLx[nLx_values$cat_race_ed_age == "Lb2_0"]
-#L0b[3, 1] <- nLx_values$nLx[nLx_values$cat_race_ed_age == "Lb3_0"]
-#L0b[4, 1] <- nLx_values$nLx[nLx_values$cat_race_ed_age == "Lb4_0"]
-#L0b[5, 1] <- nLx_values$nLx[nLx_values$cat_race_ed_age == "Lb5_0"]
-
-#Create a 5x1 matrix with 5L0 values for each education group for blacks (short way using loops)
+#First: Create a 5x1 matrix with 5L0 values for each education group for blacks (short way using loops)
+#These values are the same for all age groups (L0 does not change with age)
 
 L0b <- matrix(nrow = 5, ncol = 1)
 categories <- c("Lb1_0", "Lb2_0", "Lb3_0", "Lb4_0", "Lb5_0")
@@ -163,6 +161,10 @@ for (i in 1:5) {
 
 #Importing ASFR by race and education: this is the component Fiat of the formula
 asfr <- read.xlsx ("ASFR_byRace_byEdu.xlsx")
+asfr$fertilityRate_1960_white <- asfr$fertilityRate_1960_white/1000
+asfr$fertilityRate_1960_black <- asfr$fertilityRate_1960_black/1000
+
+
 
 #Adding the correct survival rates to the asfr dataframe
 
@@ -229,7 +231,7 @@ asfr$Sw[26:30] <- nLx_values$S[indices]
 asfr$L0b <- L0b[, 1]
 asfr$L0w <- L0w[, 1]
 
-### ver donde poner esto, pero estoy agregando filas para que fertility a los 45 sea 0
+
 #To add age 45, I need to add lines to asfr, I need need this to calculate births, even when S=0.
 new_rows <- data.frame(
   Age = rep("45-49", 5),
@@ -243,13 +245,11 @@ new_rows <- data.frame(
  )
 
 asfr <- rbind(asfr, new_rows)
-#######################################################
-
 
 
 #Now I can start multypliying elements (I'm not yet apportioning by mobility)
 #Total births for blacks
-#I'm assuming the survival rates for people aged 45 and more is 0.
+#I'm assuming the fertility rates for people aged above 45 is 0.Mare did the same.
 asfr$birthsb <- numeric(length(asfr$Age))
 for (i in 1:length(asfr$Age)) {
   asfr$birthsb[i] <- (asfr$L0b [i]/200000) * ((asfr$fertilityRate_1960_black[i] + asfr$Sb[i]*asfr$fertilityRate_1960_black[i + 5]))
@@ -263,8 +263,9 @@ for (i in 1:length(asfr$Age)) {
 
 
 
-#Now I multipli births by the mobility matrix. I should get 6 matrices for each race: IT WORKS!
+#Now I multiply births by the mobility matrix. I should get 6 matrices for each race: IT WORKS!
 #First for blacks
+
 BB15 <- asfr$birthsb[1:5] * mobB
 BB20 <- asfr$birthsb[6:10]* mobB
 BB25 <- asfr$birthsb[11:15]* mobB
@@ -273,14 +274,223 @@ BB35 <- asfr$birthsb[21:25]* mobB
 BB40 <- asfr$birthsb[26:30]* mobB
 
 #Now for whites
-BW15 <- asfr$birthsw[1:5] * mobw
-BW20 <- asfr$birthsw[6:10]* mobw
-BW25 <- asfr$birthsw[11:15]* mobw
-BW30 <- asfr$birthsw[16:20]* mobw
-BW35 <- asfr$birthsw[21:25]* mobw
-BW40 <- asfr$birthsw[26:30]* mobw
+BW15 <- asfr$birthsw[1:5] * mobW
+BW20 <- asfr$birthsw[6:10]* mobW
+BW25 <- asfr$birthsw[11:15]* mobW
+BW30 <- asfr$birthsw[16:20]* mobW
+BW35 <- asfr$birthsw[21:25]* mobW
+BW40 <- asfr$birthsw[26:30]* mobW
+
+
+#Input: education distribution given in Table 1
+
+edB <- matrix(c(0.376, 0.29, 0.233, 0.063, 0.038 
+                 ), nrow = 5, ncol = 1) 
+
+edW <- matrix(c(0.172, 0.219, 0.421, 0.119, 0.069
+), nrow = 5, ncol = 1) 
+
+#Input: population counts 2020.
+#I apportion population in each age interval according to ed distribution in edB and edW
+
+
+popB_0 <- 1479471 * edB
+popB_5 <- 1521646 * edB
+popB_10 <- 1604936 * edB
+popB_15 <- 1608846 * edB
+popB_20 <- 1656137 * edB
+popB_25 <- 1791590 * edB
+popB_30 <- 1720978 * edB
+popB_35 <- 1574864 * edB
+popB_40 <- 1486146 * edB
+popB_45 <- 1434435 * edB
+
+
+popW_0 <- 6477300 * edW
+popW_5 <- 6906727 * edW
+popW_10 <-7508793 * edW
+popW_15 <-7817750 * edW
+popW_20 <-7821550 * edW
+popW_25 <-7989817 * edW
+popW_30 <-8095525 * edW
+popW_35 <-8004046 * edW
+popW_40 <-7530823 * edW
+popW_45 <-7527717 * edW
+
+#Now I append these matrices by race to get the P vectors
+
+PW <- rbind(popW_0, popW_5, popW_10, popW_15, popW_20, popW_25, popW_30, popW_35, popW_40, popW_45)
+PB <- rbind(popB_0, popB_5, popB_10, popB_15, popB_20, popB_25, popB_30, popB_35, popB_40, popB_45)
 
 
 
 
+#uP TO THIS POINT WORKS, BUT NEED TO ADD BIRTHS TO THEN DECOMPOSE THE EDUCATION STRUCTURE
+
+
+#############Crrating a huge M matrix for each race#####
+
+#First, I create the M matrix for Blacks
+
+# Creating 50x50 matrix with zeros
+SB_matrix <- matrix(0, nrow = 45, ncol = 50)
+
+# List of 5x5 matrices for Blacks
+matrices_listB <- list(b0, b5, b10, b15, b20, b25, b30, b35, b40)
+
+# Set the block-diagonal structure
+for (i in 1:9) {
+  start_row <- (i - 1) * 5 + 1
+  end_row <- i * 5
+  start_col <- (i - 1) * 5 + 1
+  end_col <- i * 5
+  
+  SB_matrix[start_row:end_row, start_col:end_col] <- matrices_listB[[i]]
+}
+
+# Concatener B matrices for Blacks
+
+BB_matrices <- cbind(BB15, BB20, BB25, BB30, BB35, BB40)
+BB_matrices <- cbind(matrix(0, nrow = 5, ncol = 15), BB_matrices)
+BB_matrices <- cbind(BB_matrices, matrix(0, nrow = 5, ncol = 5))
+
+# Combinar S y B submatrices: This is the M matrix for blacks. it works!
+
+MB_matrix <- rbind(BB_matrices, SB_matrix)
+
+#Now the M matrix for whites
+
+# Creating 50x50 matrix with zeros
+SW_matrix <- matrix(0, nrow = 45, ncol = 50)
+
+# List of 5x5 matrices for Whites
+matrices_listW <- list(w0, w5, w10, w15, w20, w25, w30, w35, w40)
+
+# Set the block-diagonal structure
+for (i in 1:9) {
+  start_row <- (i - 1) * 5 + 1
+  end_row <- i * 5
+  start_col <- (i - 1) * 5 + 1
+  end_col <- i * 5
+  
+  SW_matrix[start_row:end_row, start_col:end_col] <- matrices_listW[[i]]
+}
+
+# Concatener B matrices
+
+BW_matrices <- cbind(BW15, BW20, BW25, BW30, BW35, BW40)
+BW_matrices <- cbind(matrix(0, nrow = 5, ncol = 15), BW_matrices)
+BW_matrices <- cbind(BW_matrices, matrix(0, nrow = 5, ncol = 5))
+
+# Combinar S y B submatrices: This is the w matrix for Whites.
+
+MW_matrix <- rbind(BW_matrices, SW_matrix)
+
+
+############Projections#############
+
+#Blacks
+#Power of 50
+MB_matrix50 <- MB_matrix %^% 50  
+
+Bproj_50 <- MB_matrix50 %*% PB
+
+#Education structure blacks after 50 iterations
+
+Bproj50_cat1 <- Bproj_50[c(1, 6, 11, 16, 21, 26, 31, 36, 41, 46)] %>%
+  sum() / sum(Bproj_50)
+
+Bproj50_cat2 <- Bproj_50[c(2, 7, 12, 17, 22, 27, 32, 37, 42, 47)] %>%
+  sum() / sum(Bproj_50)
+
+Bproj50_cat3 <- Bproj_50[c(3, 8, 13, 18, 23, 28, 33, 38, 43, 48)] %>%
+  sum() / sum(Bproj_50)
+
+Bproj50_cat4 <- Bproj_50[c(4, 9, 14, 19, 24, 29, 34, 39, 44, 49)] %>%
+  sum() / sum(Bproj_50)
+
+Bproj50_cat5 <- Bproj_50[c(5, 10, 15, 20, 25, 30, 35, 40, 45, 50)] %>%
+  sum() / sum(Bproj_50)
+
+#check the proportions sum 1: OK.
+TotalB <- Bproj50_cat1 + Bproj50_cat2 + Bproj50_cat3 + Bproj50_cat4 + Bproj50_cat5
+
+#Table with Blacks' education structure
+Blacks_ed_structure <- rbind(Bproj50_cat1, Bproj50_cat2, Bproj50_cat3, Bproj50_cat4, Bproj50_cat5)
+
+# Now iterating 1000 times
+MB_matrix1000 <- MB_matrix %^% 1000  
+Bproj_1000 <- MB_matrix1000 %*% PB
+
+# Getting the education structure after 1000 iterations
+Bproj1000_cat1 <- Bproj_1000[c(1, 6, 11, 16, 21, 26, 31, 36, 41, 46)] %>%
+  sum() / sum(Bproj_1000)
+
+Bproj1000_cat2 <- Bproj_1000[c(2, 7, 12, 17, 22, 27, 32, 37, 42, 47)] %>%
+  sum() / sum(Bproj_1000)
+
+Bproj1000_cat3 <- Bproj_1000[c(3, 8, 13, 18, 23, 28, 33, 38, 43, 48)] %>%
+  sum() / sum(Bproj_1000)
+
+Bproj1000_cat4 <- Bproj_1000[c(4, 9, 14, 19, 24, 29, 34, 39, 44, 49)] %>%
+  sum() / sum(Bproj_1000)
+
+Bproj1000_cat5 <- Bproj_1000[c(5, 10, 15, 20, 25, 30, 35, 40, 45, 50)] %>%
+  sum() / sum(Bproj_1000)
+
+Blacks_ed_structure1000 <- rbind(Bproj1000_cat1, Bproj1000_cat2, Bproj1000_cat3, Bproj1000_cat4, Bproj1000_cat5)
+
+
+#Now I do the same for Whites
+MW_matrix50 <- MW_matrix %^% 50  
+
+Wproj_50 <- MW_matrix50 %*% PW
+
+
+#Ed structure blacks
+
+Wproj50_cat1 <- Wproj_50[c(1, 6, 11, 16, 21, 26, 31, 36, 41, 46)] %>%
+  sum() / sum(Wproj_50)
+
+Wproj50_cat2 <- Wproj_50[c(2, 7, 12, 17, 22, 27, 32, 37, 42, 47)] %>%
+  sum() / sum(Wproj_50)
+
+Wproj50_cat3 <- Wproj_50[c(3, 8, 13, 18, 23, 28, 33, 38, 43, 48)] %>%
+  sum() / sum(Wproj_50)
+
+Wproj50_cat4 <- Wproj_50[c(4, 9, 14, 19, 24, 29, 34, 39, 44, 49)] %>%
+  sum() / sum(Wproj_50)
+
+Wproj50_cat5 <- Wproj_50[c(5, 10, 15, 20, 25, 30, 35, 40, 45, 50)] %>%
+  sum() / sum(Wproj_50)
+
+#check
+TotalW <- Wproj50_cat1 + Wproj50_cat2 + Wproj50_cat3 + Wproj50_cat4 + Wproj50_cat5
+
+#
+Whites_ed_structure50 <- rbind(Wproj50_cat1, Wproj50_cat2, Wproj50_cat3, Wproj50_cat4, Wproj50_cat5)
+
+# Power of 1000
+MW_matrix1000 <- MW_matrix %^% 1000  
+
+Wproj_1000 <- MW_matrix1000 %*% PW
+
+
+
+Wproj1000_cat1 <- Wproj_1000[c(1, 6, 11, 16, 21, 26, 31, 36, 41, 46)] %>%
+  sum() / sum(Wproj_1000)
+
+Wproj1000_cat2 <- Wproj_1000[c(2, 7, 12, 17, 22, 27, 32, 37, 42, 47)] %>%
+  sum() / sum(Wproj_1000)
+
+Wproj1000_cat3 <- Wproj_1000[c(3, 8, 13, 18, 23, 28, 33, 38, 43, 48)] %>%
+  sum() / sum(Wproj_1000)
+
+Wproj1000_cat4 <- Wproj_1000[c(4, 9, 14, 19, 24, 29, 34, 39, 44, 49)] %>%
+  sum() / sum(Wproj_1000)
+
+Wproj1000_cat5 <- Wproj_1000[c(5, 10, 15, 20, 25, 30, 35, 40, 45, 50)] %>%
+  sum() / sum(Wproj_1000)
+
+Whites_ed_structure1000 <- rbind(Wproj1000_cat1, Wproj1000_cat2, Wproj1000_cat3, Wproj1000_cat4, Wproj1000_cat5)
 
