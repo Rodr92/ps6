@@ -112,6 +112,7 @@ w40[1:5, 1:5] <- diag(diagonal)
 
 #Birth matrices
 # Assumption: I'm using fertility rates in Mare for year 1960. See table 2 and 3
+# I transponse the mobility matrices to locate in the first row everyone going to ed. category 1
 
 # import fertility rates
 fer <- read_excel("C:/Users/rodgo/Desktop/PhD/Ramos/SOC 756/ps6/asfr.xlsx")
@@ -321,11 +322,7 @@ PB <- rbind(popB_0, popB_5, popB_10, popB_15, popB_20, popB_25, popB_30, popB_35
 
 
 
-
-#uP TO THIS POINT WORKS, BUT NEED TO ADD BIRTHS TO THEN DECOMPOSE THE EDUCATION STRUCTURE
-
-
-#############Crrating a huge M matrix for each race#####
+#############Create a huge M matrix for each race######################
 
 #First, I create the M matrix for Blacks
 
@@ -385,6 +382,7 @@ MW_matrix <- rbind(BW_matrices, SW_matrix)
 
 
 ############Projections#############
+#To find equilibrium I rase M to 100, 1000, and then compare looking for no change.
 
 #Blacks
 #Power of 100
@@ -413,7 +411,7 @@ Bproj100_cat5 <- Bproj_100[c(5, 10, 15, 20, 25, 30, 35, 40, 45, 50)] %>%
 TotalB <- Bproj100_cat1 + Bproj100_cat2 + Bproj100_cat3 + Bproj100_cat4 + Bproj100_cat5
 
 #Table with Blacks' education structure
-Blacks_ed_structure <- rbind(Bproj100_cat1, Bproj100_cat2, Bproj100_cat3, Bproj100_cat4, Bproj100_cat5)
+Blacks_ed_structure100 <- rbind(Bproj100_cat1, Bproj100_cat2, Bproj100_cat3, Bproj100_cat4, Bproj100_cat5)
 
 # Now for Blacks iterating 1000 times
 MB_matrix1000 <- MB_matrix %^% 1000  
@@ -444,7 +442,7 @@ MW_matrix100 <- MW_matrix %^% 100
 Wproj_100 <- MW_matrix100 %*% PW
 
 
-#Ed structure blacks
+#Ed structure whites
 
 Wproj100_cat1 <- Wproj_100[c(1, 6, 11, 16, 21, 26, 31, 36, 41, 46)] %>%
   sum() / sum(Wproj_100)
@@ -461,7 +459,7 @@ Wproj100_cat4 <- Wproj_100[c(4, 9, 14, 19, 24, 29, 34, 39, 44, 49)] %>%
 Wproj100_cat5 <- Wproj_100[c(5, 10, 15, 20, 25, 30, 35, 40, 45, 50)] %>%
   sum() / sum(Wproj_100)
 
-#check
+#check: It must sum 1
 TotalW <- Wproj100_cat1 + Wproj100_cat2 + Wproj100_cat3 + Wproj100_cat4 + Wproj100_cat5
 
 #
@@ -473,7 +471,6 @@ MW_matrix1000 <- MW_matrix %^% 1000
 Wproj_1000 <- MW_matrix1000 %*% PW
 
 
-############
 Wproj1000_cat1 <- Wproj_1000[c(1, 6, 11, 16, 21, 26, 31, 36, 41, 46)] %>%
   sum() / sum(Wproj_1000)
 
@@ -531,22 +528,22 @@ MB_Q3_matrix1000 <- MB_Q3_matrix %^% 1000
 Bproj_1000 <- MB_Q3_matrix1000 %*% PB
 
 # Getting the education structure after 1000 iterations
-Bproj1000Q_cat1 <- Bproj_1000[c(1, 6, 11, 16, 21, 26, 31, 36, 41, 46)] %>%
+Bproj1000Q3_cat1 <- Bproj_1000[c(1, 6, 11, 16, 21, 26, 31, 36, 41, 46)] %>%
   sum() / sum(Bproj_1000)
 
-Bproj1000Q_cat2 <- Bproj_1000[c(2, 7, 12, 17, 22, 27, 32, 37, 42, 47)] %>%
+Bproj1000Q3_cat2 <- Bproj_1000[c(2, 7, 12, 17, 22, 27, 32, 37, 42, 47)] %>%
   sum() / sum(Bproj_1000)
 
-Bproj1000Q_cat3 <- Bproj_1000[c(3, 8, 13, 18, 23, 28, 33, 38, 43, 48)] %>%
+Bproj1000Q3_cat3 <- Bproj_1000[c(3, 8, 13, 18, 23, 28, 33, 38, 43, 48)] %>%
   sum() / sum(Bproj_1000)
 
-Bproj1000Q_cat4 <- Bproj_1000[c(4, 9, 14, 19, 24, 29, 34, 39, 44, 49)] %>%
+Bproj1000Q3_cat4 <- Bproj_1000[c(4, 9, 14, 19, 24, 29, 34, 39, 44, 49)] %>%
   sum() / sum(Bproj_1000)
 
-Bproj1000_cat5 <- Bproj_1000[c(5, 10, 15, 20, 25, 30, 35, 40, 45, 50)] %>%
+Bproj1000Q3_cat5 <- Bproj_1000[c(5, 10, 15, 20, 25, 30, 35, 40, 45, 50)] %>%
   sum() / sum(Bproj_1000)
 
-Blacks_ed_structure1000_Q3 <- rbind(Bproj1000_cat1, Bproj1000_cat2, Bproj1000_cat3, Bproj1000_cat4, Bproj1000_cat5)
+Blacks_ed_structure1000_Q3 <- rbind(Bproj1000Q3_cat1, Bproj1000Q3_cat2, Bproj1000Q3_cat3, Bproj1000Q3_cat4, Bproj1000Q3_cat5)
 
 #Q4: To what degree are differences in the (equilibrium) education distributions for Black and White people attributable
 #to differences in maternal mortality patterns between Black and White women?
@@ -659,7 +656,7 @@ Bproj1000Q5_cat5 <- Bproj_1000Q5[c(5, 10, 15, 20, 25, 30, 35, 40, 45, 50)] %>%
 Blacks_ed_structure1000_Q5 <- rbind(Bproj1000Q5_cat1, Bproj1000Q5_cat2, Bproj1000Q5_cat3, Bproj1000Q5_cat4, Bproj1000Q5_cat5)
 
 # 6. To what degree are differences in the education distributions for Black and White people
-#after three generations attributable todifferences in intergenerational mobility patterns between Black and White people?
+#after three generations attributable to differences in intergenerational mobility patterns between Black and White people?
 
 #First, I re-estimate the B submatrices of Blacks using the mobility patterns of whites. 
 
@@ -715,7 +712,7 @@ Bproj12Q6_cat4 <- Bproj_12Q6[c(4, 9, 14, 19, 24, 29, 34, 39, 44, 49)] %>%
 Bproj12Q6_cat5 <- Bproj_12Q6[c(5, 10, 15, 20, 25, 30, 35, 40, 45, 50)] %>%
   sum() / sum(Bproj_12Q6)
 
-Blacks_ed_structure1000_Q6 <- rbind(Bproj12Q6_cat1, Bproj12Q6_cat2, Bproj12Q6_cat3, Bproj12Q6_cat4, Bproj12Q6_cat5)
+Blacks_ed_structure_Q6 <- rbind(Bproj12Q6_cat1, Bproj12Q6_cat2, Bproj12Q6_cat3, Bproj12Q6_cat4, Bproj12Q6_cat5)
 
 # Now I just project for whites using the original M matrix doing 12 iterations
 
@@ -820,7 +817,7 @@ BB_matrices <- cbind(BB_matrices, matrix(0, nrow = 5, ncol = 5))
 
 MB_matrix <- rbind(BB_matrices, SB_matrix)
 
-#Now I project at equilibrium and compare
+#Now I project at equilibrium
 
 # Now for Blacks iterating 1000 times
 MB_matrix1000 <- MB_matrix %^% 1000  
@@ -843,6 +840,60 @@ Bproj1000_cat5 <- Bproj_1000[c(5, 10, 15, 20, 25, 30, 35, 40, 45, 50)] %>%
   sum() / sum(Bproj_1000)
 
 Blacks_ed_structure1000Q7 <- rbind(Bproj1000_cat1, Bproj1000_cat2, Bproj1000_cat3, Bproj1000_cat4, Bproj1000_cat5)
+
+###Now I run the same for whites
+
+# Creating 50x50 matrix with zeros
+SW_matrix <- matrix(0, nrow = 45, ncol = 50)
+
+# List of 5x5 matrices for Blacks
+matrices_listB <- list(w0, w5, w10, w15, w20, w25, w30, w35, w40)
+
+# Set the block-diagonal structure
+for (i in 1:9) {
+  start_row <- (i - 1) * 5 + 1
+  end_row <- i * 5
+  start_col <- (i - 1) * 5 + 1
+  end_col <- i * 5
+  
+  SW_matrix[start_row:end_row, start_col:end_col] <- matrices_listB[[i]]
+}
+
+# Concatener B matrices for Blacks
+
+BW_matrices <- cbind(BW15, BW20, BW25, BW30, BW35, BW40)
+BW_matrices <- cbind(matrix(0, nrow = 5, ncol = 15), BW_matrices)
+BW_matrices <- cbind(BW_matrices, matrix(0, nrow = 5, ncol = 5))
+
+# Combinar S y B submatrices: This is the M matrix for Whites
+
+MW_matrix <- rbind(BW_matrices, SW_matrix)
+
+#Now I project at equilibrium
+
+# Now for Blacks iterating 1000 times
+MW_matrix1000 <- MW_matrix %^% 1000  
+Wproj_1000 <- MW_matrix1000 %*% PB
+
+# Getting the education structure after 1000 iterations
+Wproj1000_cat1 <- Wproj_1000[c(1, 6, 11, 16, 21, 26, 31, 36, 41, 46)] %>%
+  sum() / sum(Wproj_1000)
+
+Wproj1000_cat2 <- Wproj_1000[c(2, 7, 12, 17, 22, 27, 32, 37, 42, 47)] %>%
+  sum() / sum(Wproj_1000)
+
+Wproj1000_cat3 <- Wproj_1000[c(3, 8, 13, 18, 23, 28, 33, 38, 43, 48)] %>%
+  sum() / sum(Wproj_1000)
+
+Wproj1000_cat4 <- Wproj_1000[c(4, 9, 14, 19, 24, 29, 34, 39, 44, 49)] %>%
+  sum() / sum(Wproj_1000)
+
+Wproj1000_cat5 <- Wproj_1000[c(5, 10, 15, 20, 25, 30, 35, 40, 45, 50)] %>%
+  sum() / sum(Wproj_1000)
+
+Whites_ed_structure1000Q7 <- rbind(Wproj1000_cat1, Wproj1000_cat2, Wproj1000_cat3, Wproj1000_cat4, Wproj1000_cat5)
+
+
 
 # Q8: 8. What would the equilibrium distributions be if mother's and daughter's
 #educational attainments were statistically independent?
